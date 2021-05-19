@@ -56,7 +56,21 @@ extension AppDelegate: MPPlayableContentDataSource {
             return 2 // buat set banyak tab
         }
         
-        return carplayPlaylist.stations.count
+        if indexPath.first == 0 {
+            return carplayPlaylist.stations.count
+        } else if indexPath.first == 1{
+            if indexPath.endIndex == 1 {
+                return 1
+            } else if indexPath.endIndex == 2 {
+                return carplayPlaylist.stations.count
+            } else {
+                return 0
+            }
+        } else {
+            return 0
+        }
+        
+        
     }
     
     func contentItem(at indexPath: IndexPath) -> MPContentItem? {
@@ -88,9 +102,9 @@ extension AppDelegate: MPPlayableContentDataSource {
                 return nil
             }
         }
-        else if indexPath.count == 2, indexPath.item < carplayPlaylist.stations.count {
+        else if indexPath.count == 2 {
             //proses cari index tab
-            if indexPath.first == 0 {
+            if indexPath.first == 0, indexPath.item < carplayPlaylist.stations.count {
                 // Stations section
                 let station = carplayPlaylist.stations[indexPath.item]
 
@@ -118,10 +132,61 @@ extension AppDelegate: MPPlayableContentDataSource {
                 }
 
                 return item
+            } else if indexPath.first == 1{
+                let item = MPContentItem(identifier: "Pop")
+                item.title = "Pop"
+                item.isContainer = true
+                item.isPlayable = false
+                item.artwork = MPMediaItemArtwork(boundsSize: #imageLiteral(resourceName: "carPlayTab").size, requestHandler: { _ -> UIImage in
+                    return #imageLiteral(resourceName: "carPlayTab")
+                })
+                return item
             } else {
                 return nil
             }
             
+        }
+        else if indexPath.count == 3 {
+            
+            if indexPath.first == 1 {
+                
+                print("indexPath.last : \(indexPath.last)")
+                
+                if let index = indexPath.last, index < carplayPlaylist.stations.count {
+                    let station = carplayPlaylist.stations[index]
+
+                    let item = MPContentItem(identifier: "\(station.name)")
+                    item.title = station.name
+                    item.subtitle = station.desc
+                    item.isPlayable = true
+                    item.isStreamingContent = true
+
+                    if station.imageURL.contains("http") {
+                        ImageLoader.sharedLoader.imageForUrl(urlString: station.imageURL) { image, _ in
+                            DispatchQueue.main.async {
+                                guard let image = image else { return }
+                                item.artwork = MPMediaItemArtwork(boundsSize: image.size, requestHandler: { _ -> UIImage in
+                                    return image
+                                })
+                            }
+                        }
+                    } else {
+                        if let image = UIImage(named: station.imageURL) ?? UIImage(named: "stationImage") {
+                            item.artwork = MPMediaItemArtwork(boundsSize: image.size, requestHandler: { _ -> UIImage in
+                                return image
+                            })
+                        }
+                    }
+
+                    return item
+                } else {
+                    return nil
+                }
+            } else {
+                return nil
+            }
+            
+
         }
         else {
             return nil
